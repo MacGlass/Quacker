@@ -33,6 +33,9 @@
             </div>
             <p class="single-message">{{ message.text }}</p>
             <span class="text-muted">{{ message.timestamp.strftime('%d %B %Y') }}</span>
+            <form method="POST" action="/messages/{{ message.id }}/like">
+              <a href="#" onclick="this.parentNode.submit()"><i class="far fa-star"></i></a>
+            </form>
           </div>
         </li>
       </ul>

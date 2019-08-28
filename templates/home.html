@@ -50,7 +50,32 @@
               <a href="/users/{{ msg.user.id }}">@{{ msg.user.username }}</a>
               <span class="text-muted">{{ msg.timestamp.strftime('%d %B %Y') }}</span>
               <p>{{ msg.text }}</p>
-            </div>
+              
+              <form method="POST" action="/messages/{{ msg.id }}/like">
+                <a href="#" onclick="this.parentNode.submit()">
+              {% for like in g.user.likes %}
+                  
+                  {% if like.user_id not in msg.likers %}
+                  <i class="fas fa-star"></i>
+                  {% else %}
+                  <i class="far fa-star"></i>
+                {% endif %}
+              {% endfor %}
+             
+            
+
+
+            </a>
+          </form>
+              
+              <!-- {% for likes in g.user.likes %}
+                {% if likes.message_id != msg.id %}
+                <form method="POST" action="/messages/{{ msg.id }}/like">
+                  <a href="#" onclick="this.parentNode.submit()"><i class="far fa-star"></i></a>
+                </form>
+                {% endif %}
+              {% endfor %} -->
+            </div> 
           </li>
         {% endfor %}
       </ul>
