@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, EditProfileForm
-from models import db, connect_db, User, Message, LikedMessage
+from models import db, connect_db, User, Message, Like
 
 CURR_USER_KEY = "curr_user"
 
@@ -255,8 +255,17 @@ def delete_user():
     return redirect("/signup")
 
 
+@app.route('/users/<int:user_id>/likes')
+def show_likes(user_id):
+    """Shows list of liked messages by user"""
+
+    user_with_likes = User.query.get(user_id)
+
+    return render_template('/users/likes-list.html', user=user_with_likes)
+
 ##############################################################################
 # Messages routes:
+
 
 @app.route('/messages/new', methods=["GET", "POST"])
 def messages_add():
@@ -306,7 +315,7 @@ def messages_destroy(message_id):
 
 @app.route('/messages/<int:id>/like', methods=["POST"])
 def like_message(id):
-    """Likes a message."""
+    """Likes a message, adds to db."""
 
     message_info = Message.query.get_or_404(id)
 
@@ -315,9 +324,26 @@ def like_message(id):
         return redirect("/")
 
     if message_info.user != g.user.username:
+        new_liked_message = Like(user_id=g.user.id, message_id=id)
+        db.session.add(new_liked_message)
+        db.session.commit()
 
-        liked_message = LikedMessage(user_id=g.user.id, message_id=id)
-        db.session.add(liked_message)
+        return redirect("/")
+
+
+@app.route('/messages/<int:message_id>/unlike', methods=["POST"])
+def unlike_message(message_id):
+    """Unikes a message and deletes like from db."""
+
+    message_info = Message.query.get_or_404(message_id)
+
+    if not g.user:
+        flash("Must be logged in to 'like' something.", "danger")
+        return redirect("/")
+
+    if message_info.user != g.user.username:
+        liked_message = Like.query.get_or_404((g.user.id, message_id))
+        db.session.delete(liked_message)
         db.session.commit()
 
         return redirect("/")

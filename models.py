@@ -88,7 +88,9 @@ class User(db.Model):
         secondaryjoin=(Follows.user_being_followed_id == id)
     )
 
-    likes = db.relationship("LikedMessage", backref="likers")
+    liked_messages = db.relationship("Message",
+                                     secondary="likes",
+                                     backref="users_who_liked")
 
     def __repr__(self):
         return f"<User #{self.id}: {self.username}, {self.email}>"
@@ -96,13 +98,15 @@ class User(db.Model):
     def is_followed_by(self, other_user):
         """Is this user followed by `other_user`?"""
 
-        found_user_list = [user for user in self.followers if user == other_user]
+        found_user_list = [
+            user for user in self.followers if user == other_user]
         return len(found_user_list) == 1
 
     def is_following(self, other_user):
         """Is this user following `other_use`?"""
 
-        found_user_list = [user for user in self.following if user == other_user]
+        found_user_list = [
+            user for user in self.following if user == other_user]
         return len(found_user_list) == 1
 
     @classmethod
@@ -174,25 +178,23 @@ class Message(db.Model):
 
     user = db.relationship('User')
 
-class LikedMessage(db.Model):
+
+class Like(db.Model):
     """Shows which users liked which messages."""
 
-    ___tablename__ = 'likedmessages'
+    __tablename__ = 'likes'
 
     user_id = db.Column(
         db.Integer,
         db.ForeignKey('users.id', ondelete='CASCADE'),
-        primary_key=True,
-        nullable=False
+        primary_key=True
     )
 
     message_id = db.Column(
         db.Integer,
         db.ForeignKey('messages.id', ondelete='CASCADE'),
-        primary_key=True,
-        nullable=False
+        primary_key=True
     )
-
 
 
 def connect_db(app):
@@ -203,4 +205,3 @@ def connect_db(app):
 
     db.app = app
     db.init_app(app)
-
