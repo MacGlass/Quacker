@@ -160,7 +160,7 @@ def users_show(user_id):
 def show_following(user_id):
     """Show list of people this user is following."""
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -172,7 +172,7 @@ def show_following(user_id):
 def users_followers(user_id):
     """Show list of followers of this user."""
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -184,7 +184,7 @@ def users_followers(user_id):
 def add_follow(follow_id):
     """Add a follow for the currently-logged-in user."""
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -199,7 +199,7 @@ def add_follow(follow_id):
 def stop_following(follow_id):
     """Have currently-logged-in-user stop following this user."""
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -214,7 +214,7 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -243,7 +243,7 @@ def profile():
 def delete_user():
     """Delete user."""
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -274,7 +274,7 @@ def messages_add():
     Show form if GET. If valid, update message and redirect to user page.
     """
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -302,7 +302,7 @@ def messages_show(message_id):
 def messages_destroy(message_id):
     """Delete a message."""
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
@@ -319,7 +319,7 @@ def like_message(id):
 
     message_info = Message.query.get_or_404(id)
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Must be logged in to 'like' something.", "danger")
         return redirect("/")
 
@@ -337,7 +337,7 @@ def unlike_message(message_id):
 
     message_info = Message.query.get_or_404(message_id)
 
-    if not g.user:
+    if CURR_USER_KEY not in session:
         flash("Must be logged in to 'like' something.", "danger")
         return redirect("/")
 
@@ -361,7 +361,7 @@ def homepage():
     - logged in: 100 most recent messages of followed_users
     """
 
-    if g.user:
+    if CURR_USER_KEY not in session:
 
         following_ids = [f.id for f in g.user.following]
 

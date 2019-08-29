@@ -30,7 +30,7 @@ PASSWORD = "Passsword"
 
 
 class UserModelTestCase(TestCase):
-    """Test views for messages."""
+    """Tests for the User model."""
 
     def setUp(self):
         """Create test client, add sample data."""
@@ -121,6 +121,8 @@ class UserModelTestCase(TestCase):
         db.session.add(new_user)
         db.session.commit()
         self.assertEqual(User.query.count(), user_count + 1)
+        self.assertNotEqual(User.query.count(), user_count + 2)
+
 
     def test_user_creation_method_fail(self):
         """Making sure user with invalid credentials is not added"""
