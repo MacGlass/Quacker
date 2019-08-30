@@ -1,12 +1,13 @@
 
 
-from app import app, CURR_USER_KEY
+
 import os
 from unittest import TestCase
 from sqlalchemy.exc import IntegrityError
 from models import db, User, Message, Follows, bcrypt
 from datetime import datetime
 from flask import Flask, render_template, request, flash, redirect, session, g
+# import request
 
 # BEFORE we import our app, let's set an environmental variable
 # to use a different database for tests (we need to do this
@@ -14,7 +15,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 # connected to the database
 
 os.environ['DATABASE_URL'] = "postgresql:///warbler-test"
-
+from app import app, CURR_USER_KEY
 # Now we can import app
 # from seed import seed_data
 
@@ -31,6 +32,8 @@ class MessageModelTestCase(TestCase):
 
     def setUp(self):
         """Create test client, add sample data."""
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
 
         User.query.delete()
         Message.query.delete()
@@ -96,7 +99,6 @@ class MessageModelTestCase(TestCase):
             resp = client.get(
                 f'users/{self.user.id}/following')
             html = resp.get_data(as_text=True)
-            # import pdb; pdb.set_trace()
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(resp.location, "http://localhost/")
 
@@ -106,15 +108,16 @@ class MessageModelTestCase(TestCase):
         with app.test_client() as client:
             with client.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.user.id
-            resp = client.post('/messages/new')
-            html = resp.get_data(as_text=True)
-            self.assertEqual(resp.status_code, 200)
             user = User.query.get_or_404(self.user.id)
             msg_len = len(user.messages)
-            user_message = Message(text='i am whiskey',
-                                   user_id=user.id, timestamp=datetime.utcnow())
-            db.session.add(user_message)
-            db.session.commit()
+            resp = client.post('/messages/new', 
+                               data={'text': 'i am whiskey2', 
+                                    'user_id': user.id, 
+                                    'timestamp': datetime.utcnow()})
+
+            self.assertEqual(resp.status_code, 302)
+            w = Message.query.filter_by(text="i am whiskey2").first()
+            self.assertIsNotNone(w)
             self.assertEqual(len(user.messages), msg_len + 1)
 
     def test_deleting_a_message(self):
@@ -128,8 +131,61 @@ class MessageModelTestCase(TestCase):
             msg_len = len(user.messages)
             resp = client.post(f'messages/{msg.id}/delete')
             self.assertEqual(resp.status_code, 302)
-            db.session.delete(msg)
-            db.session.commit()
             self.assertEqual(len(user.messages), msg_len - 1)
 
+    def test_logged_out_add_msg(self):
+        """Testing to see if can add message when logged out."""
+        
+        with app.test_client() as client:
+            resp = client.post('/messages/new', 
+                               data={'text': 'i am whiskey2', 
+                                    'user_id': self.user.id, 
+                                    'timestamp': datetime.utcnow()})
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp.location, "http://localhost/")
     
+    def test_logged_out_delete_msg(self):
+        """Testing to see if can delete message when logged out."""
+        
+        with app.test_client() as client:
+            user = User.query.get_or_404(self.user.id)
+            msg = Message.query.get_or_404(user.messages[0].id)
+            resp = client.post(f'messages/{msg.id}/delete')
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp.location, "http://localhost/")
+    
+    def test_add_msg_as_another(self):
+        """Testing to see if you can add message as another user."""
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.user.id
+            q = User.query.get(2)
+            q_len = len(q.messages)
+            resp = client.post('/messages/new', 
+                               data={'text': 'i am whiskey2', 
+                                    'user_id': 2, 
+                                    'timestamp': datetime.utcnow()})
+            self.assertEqual(q_len, len(q.messages))
+    
+    def test_delete_msg_as_another(self):
+        """Testing to see if you can delete a message as another user."""
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.user.id
+            user = User.query.get_or_404(2)
+            new_msg = Message(text='whiskey3', user_id=2, timestamp=datetime.utcnow())
+            db.session.add(new_msg)
+            db.session.commit()
+
+            msg = Message.query.get_or_404(user.messages[0].id)
+            msg_len = len(user.messages)
+            # request.referrer = self.user
+            resp = client.post(f'messages/{msg.id}/delete')
+            # import pdb; pdb.set_trace()
+            # self.assertEqual(resp.status_code, 302)
+            # self.assertEqual(resp.location, "http://localhost/")
+            self.assertEqual(msg_len, len(user.messages))
+
+        # last test is very difficult to test without configuring the app itself
+        # rn if you go into the make new message page and change form action
+        # to delete a particular message, it'll actually delete 
