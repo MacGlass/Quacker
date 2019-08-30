@@ -363,7 +363,8 @@ def homepage():
     - logged in: 100 most recent messages of followed_users
     """
 
-    if CURR_USER_KEY not in session:
+    # if CURR_USER_KEY not in session:
+    if g.user:
 
         following_ids = [f.id for f in g.user.following]
 
