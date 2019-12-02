@@ -18,3 +18,10 @@ $ source venv/bin/activate
 3. Start the server:
 
 (venv) $ flask run
+
+
+
+Testing:  
+
+To run a file containing unittests, you can run the command: FLASK_ENV=production python -m unittest <name-of-python-file>
+
